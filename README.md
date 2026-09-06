@@ -1,7 +1,7 @@
 # Falcon Builder — self-hosted
 
 [![Smoke test](https://github.com/NeoSky-AI/falcon-builder-self-hosted/actions/workflows/smoke.yml/badge.svg)](https://github.com/NeoSky-AI/falcon-builder-self-hosted/actions/workflows/smoke.yml)
-[![Release](https://img.shields.io/badge/release-v0.1.0-blue)](UPGRADING.md#release-notes)
+[![Release](https://img.shields.io/badge/release-v0.2.0-blue)](UPGRADING.md#release-notes)
 
 Run [Falcon Builder](https://falconbuilder.dev), the AI workflow and agent
 builder, on your own server with Docker Compose. This repository holds the
@@ -52,7 +52,7 @@ on `http://localhost:9000`.
 |---|---|---|
 | `caddy` | `caddy:2-alpine` | TLS (automatic certificates) and reverse proxy. The only service that publishes ports. |
 | `web` | `ghcr.io/neosky-ai/falcon-builder-web` | The application |
-| `worker` | `ghcr.io/neosky-ai/falcon-builder-worker` | Runs workflows, processes documents, sends email |
+| `worker` | `ghcr.io/neosky-ai/falcon-builder-worker` | Runs workflows, processes documents, sends email. Reports its health (queues, Redis, database) so `docker compose ps` shows the real state |
 | `scheduler` | `alpine` + curl | The scheduled jobs (triggers, timeouts, retention), see `crontab.template` |
 | `migrate` | worker image | One-shot: pgvector extension + schema. Runs on every `up`; idempotent |
 | `postgres` | `pgvector/pgvector:pg16` | The database |
