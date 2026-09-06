@@ -24,6 +24,19 @@ schema changes are not reversible in place.
 
 ## Release notes
 
+### v0.2.0
+
+- The worker reports its health: `docker compose ps` shows `healthy` only
+  when its job queues, Redis and the database all answer, and
+  `docker compose up -d --wait` waits for that. No configuration change.
+- Community-edition worker logs no longer mention Supabase or the affiliate
+  programme, which do not exist in this edition.
+- Configuration errors link to the guides in this repository.
+- Release notes are generated on each tag; see the
+  [releases](https://github.com/NeoSky-AI/falcon-builder/releases) page.
+
+Nothing to migrate. `git pull && docker compose pull && docker compose up -d`.
+
 ### v0.1.0
 
 First public release of the Community edition. Nothing to migrate from.
