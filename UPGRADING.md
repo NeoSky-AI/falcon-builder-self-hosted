@@ -24,6 +24,16 @@ schema changes are not reversible in place.
 
 ## Release notes
 
+### v0.3.0
+
+- The web image no longer rewrites its own files at start. The app resolves
+  its public origin at runtime: `APP_URL` on the server, the page's own
+  origin in the browser. Nothing changes in `.env`; `APP_URL` was already
+  the value `setup.sh` writes.
+- Sign-in configuration errors name `APP_URL`.
+
+Nothing to migrate. `git pull && docker compose pull && docker compose up -d`.
+
 ### v0.2.0
 
 - The worker reports its health: `docker compose ps` shows `healthy` only

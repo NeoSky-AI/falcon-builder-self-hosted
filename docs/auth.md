@@ -17,7 +17,7 @@ Set these in the web app's environment.
 
 ```bash
 AUTH_SECRET=...                       # required, 32+ characters — signs session cookies
-NEXT_PUBLIC_APP_URL=https://falcon.example.com   # required — the public origin of your instance
+APP_URL=https://falcon.example.com   # required — the public origin of your instance (setup.sh sets it)
 ```
 
 Generate the secret once and keep it stable:
@@ -29,7 +29,7 @@ openssl rand -base64 32
 Rotating `AUTH_SECRET` signs every user out (their cookies stop verifying);
 it does not touch accounts or passwords.
 
-`NEXT_PUBLIC_APP_URL` must be the exact origin users see in the browser,
+`APP_URL` must be the exact origin users see in the browser,
 including the scheme. It decides the cookie's `Secure` flag (https only),
 the OAuth redirect URIs below, and which redirect targets sign-in trusts.
 
@@ -65,7 +65,7 @@ password under Account settings (current password required) or through the
 - the reset email is sent over SMTP (`SMTP_HOST`, `SMTP_FROM` and friends
   must be configured, see [Email](./email.md); without them the request is
   refused with the missing variables named),
-- the link points at `<NEXT_PUBLIC_APP_URL>/reset-password?code=…`,
+- the link points at `<APP_URL>/reset-password?code=…`,
 - the link is valid for one hour and can be used once.
 
 Requesting a reset for an address that has no account succeeds silently, as
