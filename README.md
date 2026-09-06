@@ -17,7 +17,7 @@ Postgres, your object storage, your SMTP server, your AI provider keys.
 
 ## Quick start
 
-Requirements: Docker Engine 24+ with Compose v2, 2 vCPU and 4 GB RAM to
+Requirements: Docker Engine 24+ with Compose v2.20+, 2 vCPU and 4 GB RAM to
 start, and for a public server a DNS name pointing at it with ports 80, 443
 and 9000 reachable.
 
