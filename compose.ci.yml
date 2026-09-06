@@ -1,0 +1,35 @@
+# Overrides for the smoke test (.github/workflows/smoke.yml) and for anyone
+# who wants a throwaway instance with a mail catcher:
+#
+#   docker compose -f docker-compose.yml -f compose.ci.yml up -d
+#
+# Adds Mailpit as the SMTP server and points the app at it; Mailpit's inbox
+# is on http://localhost:8025 (API on /api/v1).
+services:
+  mailpit:
+    image: axllent/mailpit:v1.21
+    restart: unless-stopped
+    ports:
+      - "127.0.0.1:8025:8025"
+    healthcheck:
+      test: ["CMD", "/mailpit", "readyz"]
+      interval: 5s
+      timeout: 3s
+      retries: 20
+
+  web:
+    environment:
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_SECURE: "false"
+      SMTP_FROM: "Falcon Builder <noreply@example.com>"
+    depends_on:
+      mailpit:
+        condition: service_healthy
+
+  worker:
+    environment:
+      SMTP_HOST: mailpit
+      SMTP_PORT: "1025"
+      SMTP_SECURE: "false"
+      SMTP_FROM: "Falcon Builder <noreply@example.com>"

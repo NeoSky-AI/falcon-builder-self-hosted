@@ -1,0 +1,13 @@
+# Falcon Builder scheduled jobs — the same eight schedules the cloud edition
+# runs. Executed by the `scheduler` container against the web service;
+# __CRON_SECRET__ is filled in from .env when the container starts.
+#
+# min hour dom mon dow  command
+*/5 * * * * curl -fsS -H "Authorization: Bearer __CRON_SECRET__" http://web:3000/api/cron/event-triggers >/dev/null 2>&1
+* * * * * curl -fsS -H "Authorization: Bearer __CRON_SECRET__" http://web:3000/api/cron/schedule-triggers >/dev/null 2>&1
+*/5 * * * * curl -fsS -H "Authorization: Bearer __CRON_SECRET__" http://web:3000/api/cron/reap-stuck-executions >/dev/null 2>&1
+* * * * * curl -fsS -H "Authorization: Bearer __CRON_SECRET__" http://web:3000/api/cron/hitl-timeouts >/dev/null 2>&1
+* * * * * curl -fsS -H "Authorization: Bearer __CRON_SECRET__" http://web:3000/api/cron/redaction-schedule >/dev/null 2>&1
+0 3 * * * curl -fsS -H "Authorization: Bearer __CRON_SECRET__" http://web:3000/api/cron/redaction-retention >/dev/null 2>&1
+0 8 * * 1 curl -fsS -H "Authorization: Bearer __CRON_SECRET__" http://web:3000/api/cron/redaction-digest >/dev/null 2>&1
+0 9 * * * curl -fsS -H "Authorization: Bearer __CRON_SECRET__" http://web:3000/api/cron/runtime-token-burn-alerts >/dev/null 2>&1

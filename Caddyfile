@@ -1,0 +1,24 @@
+# Falcon Builder — reverse proxy and TLS.
+#
+# Site addresses come from .env:
+#   APP_URL       https://falcon.example.com        (or http://localhost:3000)
+#   STORAGE_URL   https://falcon.example.com:9000   (or http://localhost:9000)
+#
+# For https:// addresses Caddy obtains and renews certificates automatically
+# (ports 80 and 443 must reach this host). For http://localhost addresses it
+# serves plain HTTP on the given port.
+
+{
+	# Uncomment to receive certificate expiry notices from the CA:
+	# email you@example.com
+}
+
+{$APP_URL} {
+	encode zstd gzip
+	reverse_proxy web:3000
+}
+
+# Presigned upload/download links point browsers here (docs/storage.md).
+{$STORAGE_URL} {
+	reverse_proxy minio:9000
+}

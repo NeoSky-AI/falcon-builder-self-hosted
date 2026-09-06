@@ -1,0 +1,40 @@
+# Brings the stack up on a runner with the published images and drives the
+# sign-in flows over HTTP (scripts/smoke.sh), with Mailpit standing in for the
+# operator's SMTP server. Runs on every change to this repository and nightly,
+# so a broken `latest` image or a broken Compose file is noticed the same day.
+name: Smoke
+
+on:
+  pull_request:
+  push:
+    branches: [main]
+  schedule:
+    - cron: '17 5 * * *'
+  workflow_dispatch:
+
+jobs:
+  smoke:
+    name: Compose stack smoke
+    runs-on: ubuntu-latest
+    timeout-minutes: 25
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Configure (laptop mode, generated secrets)
+        run: APP_URL=http://localhost:3000 ./setup.sh
+
+      - name: Bring the stack up
+        run: |
+          docker compose -f docker-compose.yml -f compose.ci.yml pull --quiet
+          docker compose -f docker-compose.yml -f compose.ci.yml up -d --wait --wait-timeout 300
+
+      - name: Smoke
+        run: BASE=http://localhost:3000 MAILPIT=http://localhost:8025 scripts/smoke.sh
+
+      - name: Logs on failure
+        if: failure()
+        run: docker compose -f docker-compose.yml -f compose.ci.yml logs --no-color --tail 200 migrate web worker caddy scheduler
+
+      - name: Tear down
+        if: always()
+        run: docker compose -f docker-compose.yml -f compose.ci.yml down -v
