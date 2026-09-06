@@ -108,6 +108,11 @@ services:
         condition: service_completed_successfully
       redis:
         condition: service_healthy
+      # The bucket must exist before the app hands out upload links. Ignored
+      # when the storage profile is off (your own bucket already exists).
+      minio-init:
+        condition: service_completed_successfully
+        required: false
     # No ports: caddy fronts it. The image's own HEALTHCHECK applies.
 
   worker:
