@@ -1,5 +1,8 @@
 # Falcon Builder — self-hosted
 
+[![Smoke test](https://github.com/NeoSky-AI/falcon-builder-self-hosted/actions/workflows/smoke.yml/badge.svg)](https://github.com/NeoSky-AI/falcon-builder-self-hosted/actions/workflows/smoke.yml)
+[![Release](https://img.shields.io/badge/release-v0.1.0-blue)](UPGRADING.md#release-notes)
+
 Run [Falcon Builder](https://falconbuilder.dev), the AI workflow and agent
 builder, on your own server with Docker Compose. This repository holds the
 deployment stack for the **Community edition**: prebuilt images, a Compose
@@ -81,8 +84,9 @@ docker compose pull            # the release named by FALCON_VERSION in .env
 docker compose up -d           # migrate applies schema changes, then rolls the services
 ```
 
-Pin `FALCON_VERSION` in `.env` to a release (for example `v0.1.0`) to control
-when you move; `latest` follows every release. Read [UPGRADING.md](UPGRADING.md)
+`.env` pins `FALCON_VERSION` to the release setup.sh shipped with (the
+default from `.env.example`); bump it to move, or set `latest` to follow every
+release. Read [UPGRADING.md](UPGRADING.md)
 before moving between versions — it lists the changes that need a step from
 you.
 
