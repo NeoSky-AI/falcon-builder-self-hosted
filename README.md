@@ -1,7 +1,7 @@
 # Falcon Builder — self-hosted
 
 [![Smoke test](https://github.com/NeoSky-AI/falcon-builder-self-hosted/actions/workflows/smoke.yml/badge.svg)](https://github.com/NeoSky-AI/falcon-builder-self-hosted/actions/workflows/smoke.yml)
-[![Release](https://img.shields.io/badge/release-v0.2.0-blue)](UPGRADING.md#release-notes)
+[![Release](https://img.shields.io/badge/release-v0.3.0-blue)](UPGRADING.md#release-notes)
 
 Run [Falcon Builder](https://falconbuilder.dev), the AI workflow and agent
 builder, on your own server with Docker Compose. This repository holds the
