@@ -24,6 +24,14 @@ schema changes are not reversible in place.
 
 ## Release notes
 
+### v0.4.0
+
+- Updated AI model listings and pricing (LLM node model pickers, capability
+  flags, token pricing used for usage estimates). No configuration change;
+  you bring your own provider keys either way.
+
+Nothing to migrate. `git pull && docker compose pull && docker compose up -d`.
+
 ### v0.3.0
 
 - The web image no longer rewrites its own files at start. The app resolves
