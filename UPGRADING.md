@@ -24,6 +24,17 @@ schema changes are not reversible in place.
 
 ## Release notes
 
+### v0.5.0
+
+- Fixed a race that could throw an unhandled Prisma error on a workspace's
+  very first dashboard visit right after sign-up (a subscription record
+  auto-created on first use, created twice by two concurrent requests).
+  Every fresh instance hits this window once, on its first workspace;
+  self-hosted operators may have seen a "duplicate key" error in
+  `docker compose logs web` on first sign-up. No configuration change.
+
+Nothing to migrate. `git pull && docker compose pull && docker compose up -d`.
+
 ### v0.4.0
 
 - Updated AI model listings and pricing (LLM node model pickers, capability
