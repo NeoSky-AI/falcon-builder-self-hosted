@@ -52,8 +52,13 @@ services:
   # Bundled S3-compatible storage. Drop `storage` from COMPOSE_PROFILES and
   # point STORAGE_S3_* at your own bucket to use S3, R2, … instead
   # (docs/storage.md).
+  #
+  # Pulled from quay.io, not Docker Hub: the `minio` Docker Hub namespace was
+  # removed in September 2026 when the community edition went source-only, so
+  # `minio/minio` and `minio/mc` stopped resolving there. Same images, same
+  # tags — keep the registry prefix on this service and on minio-init.
   minio:
-    image: minio/minio:RELEASE.2024-12-18T13-15-44Z
+    image: quay.io/minio/minio:RELEASE.2024-12-18T13-15-44Z
     profiles: [storage]
     restart: unless-stopped
     command: server /data
@@ -71,7 +76,7 @@ services:
       retries: 24
 
   minio-init:
-    image: minio/mc:RELEASE.2024-11-17T19-35-25Z
+    image: quay.io/minio/mc:RELEASE.2024-11-17T19-35-25Z
     profiles: [storage]
     restart: "no"
     depends_on:

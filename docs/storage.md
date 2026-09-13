@@ -54,7 +54,7 @@ A minimal service definition to sit next to the Falcon containers:
 ```yaml
 services:
   minio:
-    image: minio/minio
+    image: quay.io/minio/minio
     command: server /data --console-address ":9001"
     environment:
       MINIO_ROOT_USER: minioadmin

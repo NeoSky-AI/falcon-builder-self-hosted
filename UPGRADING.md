@@ -22,6 +22,25 @@ docker compose exec postgres pg_dump -U falcon -Fc falcon > falcon-$(date +%F).d
 Rolling back means restoring that dump and setting `FALCON_VERSION` back;
 schema changes are not reversible in place.
 
+## Stack changes
+
+Changes to the Compose stack itself, independent of any Falcon release. They
+reach you with `git pull`.
+
+### 2026-09-13 — MinIO now comes from quay.io
+
+Docker Hub removed the `minio` namespace when the MinIO community edition
+went source-only, so `minio/minio` and `minio/mc` stopped resolving there and
+a fresh `docker compose pull` failed with "pull access denied for
+minio/minio". `docker-compose.yml` now pulls the same images, at the same
+tags, from `quay.io`.
+
+Nothing to migrate: `git pull && docker compose pull && docker compose up -d`
+re-pulls the image under its new name and recreates the container. Your files
+are in the `minio-data` volume, which is untouched. Instances already running
+were unaffected — the image was already on the host — and instances using
+their own S3 bucket (no `storage` profile) never pulled it at all.
+
 ## Release notes
 
 ### v0.5.0
