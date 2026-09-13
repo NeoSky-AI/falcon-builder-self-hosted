@@ -43,6 +43,55 @@ their own S3 bucket (no `storage` profile) never pulled it at all.
 
 ## Release notes
 
+### v0.9.0
+
+Coming from v0.5.0 this is four releases in one step; the notes below cover
+each of them.
+
+- The embed loader (`/embed.js`) is served with this instance's own origin
+  baked in, so a website chatbot widget loads its chat from your server. It
+  reads `APP_URL`, so it follows the address you configured with no extra
+  setting. Snippets already pasted on a site keep working unchanged — the
+  loader no longer needs the snippet to tell it where the app lives.
+
+Nothing to migrate. `git pull && docker compose pull && docker compose up -d`.
+
+### v0.8.0
+
+- Agent Loop is switched on for the workspace this instance already has. The
+  v0.6.0 default below only applied to workspaces created after it, so an
+  existing one kept failing Agent Loop nodes with "agent-loop is disabled for
+  this workspace". The migrate step backfills it on `up`.
+- Agent Loop nodes can use extended thinking on models that support it — a
+  reasoning budget configured on the node.
+- Internal: Anthropic SDK updated.
+
+No configuration change.
+
+### v0.7.0
+
+- Embed widget hardening: it survives Google Tag Manager (which rebuilds the
+  script tag and drops `data-*` attributes — the loader also reads `?slug=`,
+  `?color=` and `?base=` from the script `src`) and caching/minify plugins
+  such as WP Rocket, the chat icon is legible at the real button size, and the
+  widget is isolated from the host page's CSS.
+
+No configuration change. On v0.7.0 and v0.8.0 the loader fell back to the
+Falcon Builder cloud origin when a snippet carried no `data-base-url`; v0.9.0
+removes that fallback, so upgrading straight to v0.9.0 never passes through
+it.
+
+### v0.6.0
+
+- Agent Loop nodes are enabled by default. Existing workspaces are backfilled
+  by v0.8.0's migrate step, so this upgrade path covers both.
+- Publishing a workflow now blocks on configuration that is guaranteed to fail
+  at runtime — an empty Agent Loop prompt, an unset routing condition, an empty
+  AI Judge input or criteria. Publish returns the offending nodes instead of
+  shipping a definition that cannot run.
+
+No configuration change.
+
 ### v0.5.0
 
 - Fixed a race that could throw an unhandled Prisma error on a workspace's
