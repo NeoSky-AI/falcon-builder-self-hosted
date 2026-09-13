@@ -57,7 +57,7 @@ on `http://localhost:9000`.
 | `migrate` | worker image | One-shot: pgvector extension + schema. Runs on every `up`; idempotent |
 | `postgres` | `pgvector/pgvector:pg16` | The database |
 | `redis` | `redis:7-alpine` | Job queues |
-| `minio`, `minio-init` | `minio/minio`, `minio/mc` | File storage (profile `storage`, on by default) |
+| `minio`, `minio-init` | `quay.io/minio/minio`, `quay.io/minio/mc` | File storage (profile `storage`, on by default). Pulled from quay.io — Docker Hub removed the `minio` namespace in September 2026 |
 
 Data lives in named volumes: `postgres-data`, `redis-data`, `minio-data`,
 `caddy-data`. Back up `postgres-data` and `minio-data`, and keep a copy of
