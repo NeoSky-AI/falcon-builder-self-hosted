@@ -43,6 +43,54 @@ their own S3 bucket (no `storage` profile) never pulled it at all.
 
 ## Release notes
 
+### v0.8.0
+
+Coming from v0.5.0 this is three releases in one step — read the v0.7.0 and
+v0.6.0 notes below too.
+
+**Re-copy your embed snippet if you run the website chatbot.** The snippet in
+the agent's Interfaces panel now carries a `data-base-url` attribute pointing
+at your instance. A snippet you copied before this upgrade does not have it,
+and the embed loader shipped since v0.7.0 falls back to the Falcon Builder
+cloud origin when it is missing — so a widget already embedded on your site
+would start loading its chat from falconbuilder.dev instead of your server.
+Copy the embed code again and replace the old `<script>` tag wherever you
+pasted it. Hosted interfaces (`/i/<slug>`) are unaffected; this is only the
+embeddable widget.
+
+- Agent Loop is switched on for the workspace this instance already has. The
+  v0.6.0 default (below) only covered workspaces created after it; the migrate
+  step now backfills existing ones, so Agent Loop nodes stop failing with
+  "agent-loop is disabled for this workspace". Applied automatically.
+- Agent Loop nodes can use extended thinking on models that support it — a
+  reasoning budget configured on the node.
+- Internal: Anthropic SDK updated.
+
+Nothing to migrate by hand.
+
+### v0.7.0
+
+- Embed widget fixes: it now survives installation through Google Tag Manager
+  (which rebuilds the script tag and drops `data-*` attributes — the loader
+  also accepts `?slug=`, `?color=`, `?base=` query params on the script `src`),
+  and through caching/minify plugins such as WP Rocket. The chat icon is
+  legible at the real button size, and the widget is isolated from the host
+  page's CSS.
+
+No configuration change. See the v0.8.0 note above before upgrading if you
+have the widget embedded somewhere.
+
+### v0.6.0
+
+- Agent Loop nodes are enabled by default. Existing workspaces are backfilled
+  by v0.8.0's migrate step, so on this upgrade path both are covered.
+- Publishing a workflow now blocks on configuration that is guaranteed to fail
+  at runtime — an empty Agent Loop prompt, an unset routing condition, an empty
+  AI Judge input or criteria. Publish returns the offending nodes instead of
+  shipping a definition that cannot run.
+
+No configuration change.
+
 ### v0.5.0
 
 - Fixed a race that could throw an unhandled Prisma error on a workspace's
