@@ -3,26 +3,31 @@
 Falcon Builder releases are tagged `vX.Y.Z` in this repository's images.
 Pin the one you run with `FALCON_VERSION` in `.env`.
 
-**`git pull` does not change which release you run.** It updates
-`.env.example`, and your `.env` — written once by `setup.sh` and never
-overwritten — keeps whatever version it was created with. Moving to a new
-release means editing that line yourself:
+Upgrading is one command:
 
 ```bash
-git pull                                    # this repo: Compose file, docs, defaults
-$EDITOR .env                                # set FALCON_VERSION to the release you want
-docker compose pull                         # the images that line names
-docker compose up -d                        # migrate runs, then the services roll
+./upgrade.sh                 # move to the release this repository ships
+./upgrade.sh v0.9.0          # or to a specific one
 ```
 
-To check which release is actually running:
+It updates the repository, moves `FALCON_VERSION` in `.env`, pulls the images
+and rolls the services, then prints what ended up running.
 
-```bash
-docker compose images | grep falcon-builder
-```
+**Why a script rather than three commands:** `git pull` does not change which
+release you run. It updates `.env.example`, while your `.env` — written once by
+`setup.sh` and never overwritten — keeps whatever version it was created with,
+and that is the file the Compose images are named from. Pulling and restarting
+without touching it re-fetches the release you were already on, and everything
+reports success. The script does both halves. It changes only the
+`FALCON_VERSION` line and keeps your previous `.env` as `.env.bak`.
 
-Set `FALCON_VERSION=latest` instead if you would rather follow every release
-without editing `.env` again.
+By hand, if you prefer, the equivalent is: edit `FALCON_VERSION` in `.env`,
+then `docker compose pull && docker compose up -d`. Either way,
+`docker compose images | grep falcon-builder` shows which release is actually
+running.
+
+`./upgrade.sh latest` pins to `latest` if you would rather follow every release
+without naming versions.
 
 `migrate` runs before the app starts and applies schema changes with
 `prisma db push`. Take a database backup first when moving between minor
