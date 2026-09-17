@@ -3,13 +3,26 @@
 Falcon Builder releases are tagged `vX.Y.Z` in this repository's images.
 Pin the one you run with `FALCON_VERSION` in `.env`.
 
-Every upgrade is the same three commands:
+**`git pull` does not change which release you run.** It updates
+`.env.example`, and your `.env` — written once by `setup.sh` and never
+overwritten — keeps whatever version it was created with. Moving to a new
+release means editing that line yourself:
 
 ```bash
-git pull
-docker compose pull
-docker compose up -d
+git pull                                    # this repo: Compose file, docs, defaults
+$EDITOR .env                                # set FALCON_VERSION to the release you want
+docker compose pull                         # the images that line names
+docker compose up -d                        # migrate runs, then the services roll
 ```
+
+To check which release is actually running:
+
+```bash
+docker compose images | grep falcon-builder
+```
+
+Set `FALCON_VERSION=latest` instead if you would rather follow every release
+without editing `.env` again.
 
 `migrate` runs before the app starts and applies schema changes with
 `prisma db push`. Take a database backup first when moving between minor
@@ -35,11 +48,13 @@ a fresh `docker compose pull` failed with "pull access denied for
 minio/minio". `docker-compose.yml` now pulls the same images, at the same
 tags, from `quay.io`.
 
-Nothing to migrate: `git pull && docker compose pull && docker compose up -d`
-re-pulls the image under its new name and recreates the container. Your files
-are in the `minio-data` volume, which is untouched. Instances already running
-were unaffected — the image was already on the host — and instances using
-their own S3 bucket (no `storage` profile) never pulled it at all.
+Nothing to migrate, and no `FALCON_VERSION` change either — this is a stack
+change, so `git pull && docker compose pull && docker compose up -d` is enough
+on its own: it re-pulls the image under its new name and recreates the
+container. Your files are in the `minio-data` volume, which is untouched.
+Instances already running were unaffected — the image was already on the host —
+and instances using their own S3 bucket (no `storage` profile) never pulled it
+at all.
 
 ## Release notes
 
@@ -65,7 +80,7 @@ the challenge. Do not set `TURNSTILE_SECRET_KEY` in `.env`: the server would
 then demand a token the page cannot produce and every signup would fail. Signup
 on this edition is already limited to invited addresses.
 
-No configuration change. `git pull && docker compose pull && docker compose up -d`.
+No configuration change; upgrade with the steps at the top of this file.
 
 ### v0.9.0
 
@@ -78,7 +93,7 @@ each of them.
   setting. Snippets already pasted on a site keep working unchanged — the
   loader no longer needs the snippet to tell it where the app lives.
 
-Nothing to migrate. `git pull && docker compose pull && docker compose up -d`.
+Nothing to migrate; upgrade with the steps at the top of this file.
 
 ### v0.8.0
 
@@ -125,7 +140,7 @@ No configuration change.
   self-hosted operators may have seen a "duplicate key" error in
   `docker compose logs web` on first sign-up. No configuration change.
 
-Nothing to migrate. `git pull && docker compose pull && docker compose up -d`.
+Nothing to migrate; upgrade with the steps at the top of this file.
 
 ### v0.4.0
 
@@ -133,7 +148,7 @@ Nothing to migrate. `git pull && docker compose pull && docker compose up -d`.
   flags, token pricing used for usage estimates). No configuration change;
   you bring your own provider keys either way.
 
-Nothing to migrate. `git pull && docker compose pull && docker compose up -d`.
+Nothing to migrate; upgrade with the steps at the top of this file.
 
 ### v0.3.0
 
@@ -143,7 +158,7 @@ Nothing to migrate. `git pull && docker compose pull && docker compose up -d`.
   the value `setup.sh` writes.
 - Sign-in configuration errors name `APP_URL`.
 
-Nothing to migrate. `git pull && docker compose pull && docker compose up -d`.
+Nothing to migrate; upgrade with the steps at the top of this file.
 
 ### v0.2.0
 
@@ -156,7 +171,7 @@ Nothing to migrate. `git pull && docker compose pull && docker compose up -d`.
 - Release notes are generated on each tag; see the
   [releases](https://github.com/NeoSky-AI/falcon-builder/releases) page.
 
-Nothing to migrate. `git pull && docker compose pull && docker compose up -d`.
+Nothing to migrate; upgrade with the steps at the top of this file.
 
 ### v0.1.0
 

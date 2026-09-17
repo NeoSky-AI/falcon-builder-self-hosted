@@ -80,15 +80,20 @@ keep, or remove the `caddy` service from your copy of the Compose file.
 
 ```bash
 git pull                       # new Compose file or defaults, if any
+$EDITOR .env                   # set FALCON_VERSION to the release you want
 docker compose pull            # the release named by FALCON_VERSION in .env
 docker compose up -d           # migrate applies schema changes, then rolls the services
 ```
 
-`.env` pins `FALCON_VERSION` to the release setup.sh shipped with (the
-default from `.env.example`); bump it to move, or set `latest` to follow every
-release. Read [UPGRADING.md](UPGRADING.md)
-before moving between versions — it lists the changes that need a step from
-you.
+That second line is the one people miss. `setup.sh` writes `.env` once and
+never overwrites it, so `git pull` moves `.env.example` and leaves the release
+you actually run exactly where it was — skip the edit and you re-pull the
+version you were already on. `docker compose images | grep falcon-builder`
+shows which one is running. Set `FALCON_VERSION=latest` to follow every release
+instead.
+
+Read [UPGRADING.md](UPGRADING.md) before moving between versions — it lists the
+changes that need a step from you.
 
 ## Getting help
 
