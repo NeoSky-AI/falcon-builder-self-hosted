@@ -6,8 +6,9 @@
 Run [Falcon Builder](https://falconbuilder.dev), the AI workflow and agent
 builder, on your own server with Docker Compose. This repository holds the
 deployment stack for the **Community edition**: prebuilt images, a Compose
-file, a setup script that generates every secret, and the guides for the
-services you connect (email, storage, sign-in).
+file, a setup script that generates every secret, an upgrade script that moves
+you between releases, and the guides for the services you connect (email,
+storage, sign-in).
 
 The Community edition is the full builder — workflows, agents, knowledge
 bases, hosted interfaces, integrations, scheduled and event triggers — with
@@ -79,16 +80,23 @@ keep, or remove the `caddy` service from your copy of the Compose file.
 ## Updating
 
 ```bash
-git pull                       # new Compose file or defaults, if any
-docker compose pull            # the release named by FALCON_VERSION in .env
-docker compose up -d           # migrate applies schema changes, then rolls the services
+./upgrade.sh                   # the release this repository ships
+./upgrade.sh v0.9.0            # or a specific one
 ```
 
-`.env` pins `FALCON_VERSION` to the release setup.sh shipped with (the
-default from `.env.example`); bump it to move, or set `latest` to follow every
-release. Read [UPGRADING.md](UPGRADING.md)
-before moving between versions — it lists the changes that need a step from
-you.
+It updates this repository, moves `FALCON_VERSION` in `.env`, pulls the images
+and rolls the services (`migrate` applies schema changes first), then prints
+what ended up running.
+
+That `.env` step is the one people miss doing it by hand: `setup.sh` writes the
+file once and never overwrites it, so `git pull` moves `.env.example` and
+leaves the release you actually run exactly where it was — pull and restart
+without editing it and you re-fetch the version you were already on, with
+everything reporting success. `docker compose images | grep falcon-builder`
+shows which release is really running.
+
+Read [UPGRADING.md](UPGRADING.md) before moving between versions — it lists the
+changes that need a step from you.
 
 ## Getting help
 
