@@ -3,31 +3,38 @@
 Falcon Builder releases are tagged `vX.Y.Z` in this repository's images.
 Pin the one you run with `FALCON_VERSION` in `.env`.
 
-Upgrading is one command:
+Upgrading is two steps, from the directory you cloned:
 
 ```bash
-./upgrade.sh                 # move to the release this repository ships
-./upgrade.sh v0.9.0          # or to a specific one
+git pull        # update this repository (including upgrade.sh itself)
+./upgrade.sh    # move to the release this repository now ships
 ```
 
-It updates the repository, moves `FALCON_VERSION` in `.env`, pulls the images
-and rolls the services, then prints what ended up running.
+`upgrade.sh` moves `FALCON_VERSION` in `.env`, pulls the images and rolls the
+services, then prints what ended up running. It pulls the repository again
+itself, so the `git pull` is only needed the first time — on a checkout from
+before the script existed, `./upgrade.sh` would not be there yet.
 
-**Why a script rather than three commands:** `git pull` does not change which
-release you run. It updates `.env.example`, while your `.env` — written once by
-`setup.sh` and never overwritten — keeps whatever version it was created with,
-and that is the file the Compose images are named from. Pulling and restarting
-without touching it re-fetches the release you were already on, and everything
-reports success. The script does both halves. It changes only the
-`FALCON_VERSION` line and keeps your previous `.env` as `.env.bak`.
+To go somewhere other than the release this checkout ships:
+
+```bash
+./upgrade.sh v0.9.0     # a specific release
+./upgrade.sh latest     # follow every release from now on
+```
+
+**Why a script rather than `git pull && docker compose up -d`:** `git pull`
+does not change which release you run. It updates `.env.example`, while your
+`.env` — written once by `setup.sh` and never overwritten — keeps whatever
+version it was created with, and that is the file the Compose images are named
+from. Pulling and restarting without touching it re-fetches the release you
+were already on, and everything reports success. The script does both halves.
+It changes only the `FALCON_VERSION` line and keeps your previous `.env` as
+`.env.bak`.
 
 By hand, if you prefer, the equivalent is: edit `FALCON_VERSION` in `.env`,
 then `docker compose pull && docker compose up -d`. Either way,
 `docker compose images | grep falcon-builder` shows which release is actually
 running.
-
-`./upgrade.sh latest` pins to `latest` if you would rather follow every release
-without naming versions.
 
 `migrate` runs before the app starts and applies schema changes with
 `prisma db push`. Take a database backup first when moving between minor

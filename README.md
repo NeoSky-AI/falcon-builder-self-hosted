@@ -80,13 +80,16 @@ keep, or remove the `caddy` service from your copy of the Compose file.
 ## Updating
 
 ```bash
-./upgrade.sh                   # the release this repository ships
-./upgrade.sh v0.9.0            # or a specific one
+git pull        # update this repository (including upgrade.sh itself)
+./upgrade.sh    # move to the release this repository now ships
 ```
 
-It updates this repository, moves `FALCON_VERSION` in `.env`, pulls the images
-and rolls the services (`migrate` applies schema changes first), then prints
-what ended up running.
+`upgrade.sh` moves `FALCON_VERSION` in `.env`, pulls the images and rolls the
+services (`migrate` applies schema changes first), then prints what ended up
+running. It pulls the repository again itself, so the `git pull` is only needed
+the first time — on a checkout from before the script existed, `./upgrade.sh`
+would not be there yet. Pass a version to go somewhere else:
+`./upgrade.sh v0.9.0`, or `./upgrade.sh latest` to follow every release.
 
 That `.env` step is the one people miss doing it by hand: `setup.sh` writes the
 file once and never overwrites it, so `git pull` moves `.env.example` and
