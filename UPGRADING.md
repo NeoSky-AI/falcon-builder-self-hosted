@@ -43,6 +43,30 @@ their own S3 bucket (no `storage` profile) never pulled it at all.
 
 ## Release notes
 
+### v0.10.0
+
+- **"Continue with Google" and "Continue with Microsoft" now appear only when
+  you have configured them.** Before this, both buttons showed on every
+  instance and clicking one failed with "Provider not found" — the first thing
+  a new operator saw. Set the credentials as described in
+  [docs/auth.md](docs/auth.md#4-google-and-microsoft-sign-in-optional) and the
+  matching button comes back; leave them unset and the sign-in page is just the
+  email and password form.
+- Google Drive node: file content the API returns base64-encoded is decoded
+  rather than passed through as base64.
+- MCP: a `rerun_executions` tool replays past executions, filtered by payload
+  and paged in batches. Available where you have set `MCP_ADMIN_TOKEN` /
+  `MCP_ADMIN_WRITE_TOKEN`.
+
+Cloudflare Turnstile can now guard the signup form, and **this release does not
+turn it on here**. The widget's site key is compiled into the web bundle, and
+the image you pull is built without one, so a prebuilt instance cannot display
+the challenge. Do not set `TURNSTILE_SECRET_KEY` in `.env`: the server would
+then demand a token the page cannot produce and every signup would fail. Signup
+on this edition is already limited to invited addresses.
+
+No configuration change. `git pull && docker compose pull && docker compose up -d`.
+
 ### v0.9.0
 
 Coming from v0.5.0 this is four releases in one step; the notes below cover
