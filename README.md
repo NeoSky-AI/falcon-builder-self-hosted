@@ -6,8 +6,9 @@
 Run [Falcon Builder](https://falconbuilder.dev), the AI workflow and agent
 builder, on your own server with Docker Compose. This repository holds the
 deployment stack for the **Community edition**: prebuilt images, a Compose
-file, a setup script that generates every secret, and the guides for the
-services you connect (email, storage, sign-in).
+file, a setup script that generates every secret, an upgrade script that moves
+you between releases, and the guides for the services you connect (email,
+storage, sign-in).
 
 The Community edition is the full builder — workflows, agents, knowledge
 bases, hosted interfaces, integrations, scheduled and event triggers — with
