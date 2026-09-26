@@ -58,10 +58,10 @@ on `http://localhost:9000`.
 | `migrate` | worker image | One-shot: pgvector extension + schema. Runs on every `up`; idempotent |
 | `postgres` | `pgvector/pgvector:pg16` | The database |
 | `redis` | `redis:7-alpine` | Job queues |
-| `minio`, `minio-init` | `quay.io/minio/minio`, `quay.io/minio/mc` | File storage (profile `storage`, on by default). Pulled from quay.io — Docker Hub removed the `minio` namespace in September 2026 |
+| `storage` | `chrislusf/seaweedfs` | S3-compatible file storage (profile `storage`, on by default). Replaced MinIO in September 2026, when MinIO archived its community edition and withdrew its public images |
 
-Data lives in named volumes: `postgres-data`, `redis-data`, `minio-data`,
-`caddy-data`. Back up `postgres-data` and `minio-data`, and keep a copy of
+Data lives in named volumes: `postgres-data`, `redis-data`, `storage-data`,
+`caddy-data`. Back up `postgres-data` and `storage-data`, and keep a copy of
 `.env` — `CREDENTIAL_ENCRYPTION_KEY` in it encrypts every stored integration
 credential and cannot be recovered.
 
@@ -70,7 +70,7 @@ credential and cannot be recovered.
 Everything is in `.env`; `.env.example` documents each variable. The guides:
 
 - [Email](docs/email.md) — SMTP for transactional mail; inbound email triggers
-- [File storage](docs/storage.md) — the bundled MinIO, or your own S3, R2, …
+- [File storage](docs/storage.md) — the bundled SeaweedFS, or your own S3, R2, …
 - [Sign-in](docs/auth.md) — accounts, invitations, password reset, Google and Microsoft sign-in with your own OAuth apps
 
 Using your own reverse proxy: point it at the `web` container on port 3000,

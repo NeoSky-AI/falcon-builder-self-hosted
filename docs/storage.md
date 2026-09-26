@@ -22,7 +22,7 @@ Any service that speaks the S3 API works. The common choices:
 
 | Store | When to pick it | Notes |
 |---|---|---|
-| **MinIO** | Running everything on your own hardware or a single VM | Ships as one container; the Docker Compose below includes it |
+| **SeaweedFS** | Running everything on your own hardware or a single VM | What this stack bundles — one container, on by default |
 | **AWS S3** | Already on AWS | Use an IAM role or an access key scoped to one bucket |
 | **Cloudflare R2** | Want zero egress fees | S3-compatible endpoint; set `STORAGE_S3_REGION=auto` |
 | **Backblaze B2, Wasabi, DigitalOcean Spaces, Hetzner** | Cost-sensitive hosted storage | All expose an S3 endpoint; path-style is usually required |
@@ -35,7 +35,7 @@ pages and reads documents back for processing.
 
 ```bash
 STORAGE_S3_BUCKET=falcon                # required — one bucket for everything
-STORAGE_S3_ENDPOINT=http://minio:9000   # unset for AWS S3; set for everything else
+STORAGE_S3_ENDPOINT=http://storage:9000 # unset for AWS S3; set for everything else
 STORAGE_S3_REGION=us-east-1             # default us-east-1; "auto" for R2
 STORAGE_S3_ACCESS_KEY_ID=...            # optional as a pair (IAM role on AWS)
 STORAGE_S3_SECRET_ACCESS_KEY=...
@@ -47,36 +47,28 @@ STORAGE_S3_PUBLIC_ENDPOINT=             # optional, see "The endpoint browsers r
 Inside the bucket, Falcon uses two key prefixes, `agent-knowledge/` and
 `workflow-files/`. You don't create them; they appear with the first upload.
 
-### MinIO with Docker Compose
+### The bundled SeaweedFS
 
-A minimal service definition to sit next to the Falcon containers:
+`docker-compose.yml` already includes it as the `storage` service, on by
+default through the `storage` profile, and `setup.sh` fills in the variables
+above. You only need this section if you are replacing it.
 
-```yaml
-services:
-  minio:
-    image: quay.io/minio/minio
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: change-me
-    volumes:
-      - minio-data:/data
-    ports:
-      - "9000:9000"   # S3 API
-      - "9001:9001"   # web console
+One process serves the S3 gateway on port 9000, and the bucket is created by
+the first upload. The credentials it accepts are
+`STORAGE_S3_ACCESS_KEY_ID`/`STORAGE_S3_SECRET_ACCESS_KEY` from `.env` — the
+same pair the app signs with — so changing them there changes both sides on
+the next `docker compose up -d`.
 
-volumes:
-  minio-data:
-```
+To use your own bucket instead, remove `storage` from `COMPOSE_PROFILES` and
+point the variables above at it.
 
-Then, once:
+This was MinIO until September 2026, when MinIO archived its community
+edition and its public images stopped resolving on Docker Hub and then
+quay.io. See [UPGRADING.md](../UPGRADING.md) for moving existing files.
 
-1. Open the console at `http://<host>:9001`, sign in with the root user.
-2. Create a bucket named `falcon`.
-3. Create an access key (Identity → Access Keys) rather than using the root
-   credentials in the app.
-4. Set the variables above with `STORAGE_S3_ENDPOINT=http://minio:9000` (the
-   Compose service name resolves inside the network).
+There is no console and no setup step: no bucket to create by hand, no
+separate access key to mint. `setup.sh` writes the credentials, the service
+reads the same ones, and the bucket appears with the first upload.
 
 ## The endpoint browsers reach
 
@@ -86,8 +78,8 @@ and the signature covers it, so the host the app signs for must be one the
 browser can open.
 
 That is a problem when the app and the store share a private network. In the
-Compose stack the app reaches MinIO as `http://minio:9000`, which no browser
-can resolve. `STORAGE_S3_PUBLIC_ENDPOINT` is the answer: set it to the
+Compose stack the app reaches storage as `http://storage:9000`, which no
+browser can resolve. `STORAGE_S3_PUBLIC_ENDPOINT` is the answer: set it to the
 address browsers use (for example `https://falcon.example.com:9000`, or
 `http://localhost:9000` on a laptop) and presigned URLs are signed against
 that host, while every server-side operation keeps using
@@ -101,7 +93,8 @@ short-lived signed URL, so large files never pass through the app server.
 That means the bucket must accept cross-origin `PUT` requests from the
 Falcon web app's origin.
 
-**MinIO** allows this by default. Nothing to do.
+**The bundled SeaweedFS** is started with `-s3.allowedOrigins` set to your
+`APP_URL`, so the app's own origin is already allowed. Nothing to do.
 
 **AWS S3** needs a CORS configuration on the bucket (Permissions → CORS):
 

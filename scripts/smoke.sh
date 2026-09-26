@@ -6,9 +6,13 @@
 #   BASE=http://localhost:3000 MAILPIT=http://localhost:8025 scripts/smoke.sh
 #
 # MAILPIT is optional; without it the password-reset email check is skipped.
+# STORAGE (e.g. http://localhost:9000) is optional; with it, and the
+# STORAGE_S3_* values from .env exported, the bundled object storage is
+# exercised the way the editor uses it — a presigned upload and download.
 set -u
 BASE="${BASE:-http://localhost:3000}"
 MAILPIT="${MAILPIT:-}"
+STORAGE="${STORAGE:-}"
 J="$(mktemp -d)"; trap 'rm -rf "$J"' EXIT
 pass=0; fail=0
 check() { if eval "$2"; then echo "PASS  $1"; pass=$((pass+1)); else echo "FAIL  $1  -> $3"; fail=$((fail+1)); fi; }
@@ -65,6 +69,44 @@ if [ "$first" = 1 ]; then
     check "login with the new password" "grep -q 'HTTP:200' <<<\"\$r\"" "$r"
   else
     echo "SKIP  reset email (set MAILPIT to check it)"
+  fi
+fi
+
+
+echo
+echo "## storage"
+if [ -z "$STORAGE" ]; then
+  echo "SKIP  object storage (set STORAGE to check it)"
+else
+  BUCKET="${STORAGE_S3_BUCKET:-falcon}"
+  here="$(dirname "$0")"
+  key="smoke/$stamp.txt"
+  body="falcon-smoke-$stamp"
+
+  # A presigned PUT with the content type in the signature, then a presigned
+  # GET: exactly what the app hands the browser. The bucket is expected to be
+  # created by this first upload.
+  put=$("$here/presign.py" PUT "$STORAGE" "$BUCKET" "$key" text/plain 2>&1)
+  if [ "${put#http}" = "$put" ]; then
+    check "presign helper runs" "false" "$put"
+  else
+    c=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H 'content-type: text/plain' --data-binary "$body" "$put")
+    check "presigned upload -> 200"      "[ \"$c\" = 200 ]" "$c"
+
+    get=$("$here/presign.py" GET "$STORAGE" "$BUCKET" "$key")
+    got=$(curl -s "$get")
+    check "presigned download returns it" "[ \"$got\" = \"$body\" ]" "got: $got"
+
+    # The signature covers content-type, so the wrong one must be refused —
+    # otherwise the upload URLs are not actually constrained.
+    c=$(curl -s -o /dev/null -w '%{http_code}' -X PUT -H 'content-type: text/html' --data-binary x "$put")
+    check "wrong content-type refused"   "[ \"$c\" != 200 ]" "$c"
+
+    # Browsers PUT cross-origin from the app, so preflight must pass.
+    r=$(curl -s -D - -o /dev/null -X OPTIONS -H "origin: $BASE" \
+          -H 'access-control-request-method: PUT' \
+          -H 'access-control-request-headers: content-type' "$STORAGE/$BUCKET/$key" | tr -d '\r')
+    check "CORS preflight allows the app" "grep -qi 'access-control-allow-origin' <<<\"\$r\"" "$(head -1 <<<"$r")"
   fi
 fi
 
