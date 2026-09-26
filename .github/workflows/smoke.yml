@@ -29,7 +29,11 @@ jobs:
           docker compose -f docker-compose.yml -f compose.ci.yml up -d --wait --wait-timeout 300
 
       - name: Smoke
-        run: BASE=http://localhost:3000 MAILPIT=http://localhost:8025 scripts/smoke.sh
+        run: |
+          # The storage checks presign with the instance's own credentials.
+          set -a; . ./.env; set +a
+          BASE=http://localhost:3000 MAILPIT=http://localhost:8025 \
+            STORAGE=http://localhost:9000 scripts/smoke.sh
 
       - name: Logs on failure
         if: failure()

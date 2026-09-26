@@ -68,18 +68,19 @@ case "$host" in
 esac
 
 # ── Secrets ─────────────────────────────────────────────────────────────────
-for name in AUTH_SECRET CREDENTIAL_ENCRYPTION_KEY INVITATION_TOKEN_SECRET INTERFACE_SESSION_SECRET CRON_SECRET POSTGRES_PASSWORD MINIO_ROOT_PASSWORD; do
+for name in AUTH_SECRET CREDENTIAL_ENCRYPTION_KEY INVITATION_TOKEN_SECRET INTERFACE_SESSION_SECRET CRON_SECRET POSTGRES_PASSWORD; do
   set_if_empty "$name" "$(secret)"
 done
-set_if_empty MINIO_ROOT_USER falcon
 set_if_empty COMPOSE_PROFILES storage
 
 # ── Bundled storage wiring (only fills blanks; an external bucket stays) ────
 set_if_empty STORAGE_S3_BUCKET falcon
-set_if_empty STORAGE_S3_ENDPOINT http://minio:9000
+set_if_empty STORAGE_S3_ENDPOINT http://storage:9000
 set_if_empty STORAGE_S3_PUBLIC_ENDPOINT "$(get STORAGE_URL)"
-set_if_empty STORAGE_S3_ACCESS_KEY_ID "$(get MINIO_ROOT_USER)"
-set_if_empty STORAGE_S3_SECRET_ACCESS_KEY "$(get MINIO_ROOT_PASSWORD)"
+# On an instance that predates the SeaweedFS switch these are already set
+# from the old MINIO_ROOT_* pair, and set_if_empty leaves them alone.
+set_if_empty STORAGE_S3_ACCESS_KEY_ID falcon
+set_if_empty STORAGE_S3_SECRET_ACCESS_KEY "$(secret)"
 
 chmod 600 .env
 

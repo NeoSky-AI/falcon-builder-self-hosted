@@ -52,7 +52,74 @@ schema changes are not reversible in place.
 Changes to the Compose stack itself, independent of any Falcon release. They
 reach you with `git pull`.
 
+### 2026-09-26 — bundled storage is now SeaweedFS, not MinIO
+
+MinIO archived its community edition and withdrew the public container images:
+the `minio` Docker Hub namespace went first, this repository repointed to
+quay.io on 2026-09-13, and quay stopped serving them too on 2026-09-24. Since
+then every `docker compose pull` failed with `unauthorized: access to the
+requested resource is not authorized`, which also means **`./upgrade.sh` fails
+part-way** — it moves `FALCON_VERSION` in `.env`, then dies on the image pull,
+leaving the file pinned to a release you are not yet running. Restore
+`.env.bak` or simply re-run the upgrade once you are on this version.
+
+The bundled storage is now [SeaweedFS](https://github.com/seaweedfs/seaweedfs)
+(Apache-2.0), serving the same S3 API on the same port. `minio` and
+`minio-init` are replaced by one `storage` service; no init container, because
+the bucket is created on first upload. Nothing in the app changes.
+
+**If you use your own S3 bucket** (no `storage` in `COMPOSE_PROFILES`), there
+is nothing to do — you never pulled these images.
+
+**If you use the bundled storage, your files do not move themselves.** They are
+in the `falcon_minio-data` volume, in MinIO's on-disk format, which SeaweedFS
+cannot read. The new service uses a new volume, so the old one is left intact
+and `docker compose down -v` will not delete it. To carry the files across,
+copy them bucket to bucket while both are running — the MinIO image is gone
+from the registries, but yours is still on the host:
+
+```bash
+cd falcon-builder-self-hosted
+git pull                              # get this version of the stack
+
+# 1. Old MinIO on a spare port, from the image already on this machine.
+docker run -d --name minio-old --network falcon_default \
+  -v falcon_minio-data:/data \
+  -e MINIO_ROOT_USER="$(grep ^STORAGE_S3_ACCESS_KEY_ID= .env | cut -d= -f2-)" \
+  -e MINIO_ROOT_PASSWORD="$(grep ^STORAGE_S3_SECRET_ACCESS_KEY= .env | cut -d= -f2-)" \
+  quay.io/minio/minio:RELEASE.2024-12-18T13-15-44Z server /data
+
+# 2. New stack up, so SeaweedFS is serving.
+./upgrade.sh
+
+# 3. Copy every object across, using the mc image you already have.
+docker run --rm --network falcon_default --entrypoint /bin/sh \
+  quay.io/minio/mc:RELEASE.2024-11-17T19-35-25Z -c '
+    mc alias set old http://minio-old:9000 "$OLD_KEY" "$OLD_SECRET" &&
+    mc alias set new http://storage:9000   "$OLD_KEY" "$OLD_SECRET" &&
+    mc mb --ignore-existing new/falcon &&
+    mc mirror --overwrite old/falcon new/falcon' \
+  -e OLD_KEY="$(grep ^STORAGE_S3_ACCESS_KEY_ID= .env | cut -d= -f2-)" \
+  -e OLD_SECRET="$(grep ^STORAGE_S3_SECRET_ACCESS_KEY= .env | cut -d= -f2-)"
+
+# 4. Check the app can open an uploaded file, then clean up.
+docker rm -f minio-old
+# docker volume rm falcon_minio-data     # only once you are satisfied
+```
+
+Step 4 is not a formality: keep `falcon_minio-data` until you have opened a
+knowledge-base document and an interface upload in the browser. Removing it is
+the one irreversible step here.
+
+If `docker images | grep minio` comes back empty, the images have been pruned
+from this host and there is no way to read the volume through MinIO any more.
+Say so in an issue before doing anything else — the raw files are still in the
+volume and recovering them is a different procedure.
+
 ### 2026-09-13 — MinIO now comes from quay.io
+
+**Superseded by the 2026-09-26 entry above — quay.io stopped serving these
+images too.** Kept as the record of how the stack got here.
 
 Docker Hub removed the `minio` namespace when the MinIO community edition
 went source-only, so `minio/minio` and `minio/mc` stopped resolving there and
