@@ -37,7 +37,7 @@ jobs:
 
       - name: Logs on failure
         if: failure()
-        run: docker compose -f docker-compose.yml -f compose.ci.yml logs --no-color --tail 200 migrate web worker caddy scheduler
+        run: docker compose -f docker-compose.yml -f compose.ci.yml logs --no-color --tail 200 migrate web worker caddy scheduler storage
 
       - name: Tear down
         if: always()
