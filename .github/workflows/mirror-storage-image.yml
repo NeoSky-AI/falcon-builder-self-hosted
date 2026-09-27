@@ -1,0 +1,110 @@
+# Mirrors the bundled storage image into this organisation's GHCR, so the
+# stack no longer depends on a third party's registry staying available.
+#
+# That dependency has already broken twice: MinIO's images were withdrawn from
+# Docker Hub and then from quay.io within three weeks, and both times every
+# fresh `docker compose up -d` failed. SeaweedFS is published under a personal
+# Docker Hub namespace, which carries the same exposure. Mirroring is cheap
+# insurance: once a tag is copied here, it stays as long as we do.
+#
+# ONE-TIME SETUP: the package is created private. After the first successful
+# run, set falcon-builder-seaweedfs to PUBLIC in the organisation's package
+# settings — operators pull it without a token. The "anonymous pull" step
+# below fails until that is done, so a red run means exactly that.
+#
+# Copies the whole manifest list (amd64, arm64, 386, arm/v7) registry to
+# registry; no image is built here.
+
+name: Mirror storage image
+
+on:
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Tag to mirror (default: the one pinned in docker-compose.yml)'
+        required: false
+        type: string
+  push:
+    branches: [main]
+    paths: ['docker-compose.yml']
+  schedule:
+    # Weekly, so a deleted or expired package is noticed before an operator does.
+    - cron: '41 4 * * 1'
+
+concurrency:
+  group: mirror-storage-image
+  cancel-in-progress: false
+
+permissions:
+  contents: read
+  packages: write
+
+env:
+  UPSTREAM: docker.io/chrislusf/seaweedfs
+
+jobs:
+  mirror:
+    name: Mirror SeaweedFS to GHCR
+    runs-on: ubuntu-latest
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Work out the tag and destination
+        id: ref
+        run: |
+          set -eu
+          tag='${{ inputs.tag }}'
+          if [ -z "$tag" ]; then
+            # Matches both the upstream pin (chrislusf/seaweedfs:X) and our own
+            # (falcon-builder-seaweedfs:X), so this keeps working after the
+            # Compose file is switched over to the mirror.
+            tag=$(grep -oE 'seaweedfs:[A-Za-z0-9._-]+' docker-compose.yml | head -n1 | cut -d: -f2)
+          fi
+          # It becomes part of a registry reference; check it rather than trust it.
+          case "$tag" in
+            '' ) echo "No tag found in docker-compose.yml and none given." >&2; exit 1 ;;
+            *[!A-Za-z0-9._-]* ) echo "Not a tag: $tag" >&2; exit 1 ;;
+          esac
+          echo "tag=$tag" >> "$GITHUB_OUTPUT"
+          echo "dest=ghcr.io/${GITHUB_REPOSITORY_OWNER,,}/falcon-builder-seaweedfs" >> "$GITHUB_OUTPUT"
+          echo "Mirroring ${UPSTREAM}:$tag"
+
+      - name: Source digest
+        run: docker buildx imagetools inspect "${UPSTREAM}:${{ steps.ref.outputs.tag }}"
+
+      - uses: docker/login-action@v3
+        with:
+          registry: ghcr.io
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Copy the manifest list
+        run: |
+          docker buildx imagetools create \
+            --tag "${{ steps.ref.outputs.dest }}:${{ steps.ref.outputs.tag }}" \
+            "${UPSTREAM}:${{ steps.ref.outputs.tag }}"
+
+      - name: Mirrored digest and platforms
+        run: docker buildx imagetools inspect "${{ steps.ref.outputs.dest }}:${{ steps.ref.outputs.tag }}"
+
+      - name: Anonymous pull (what an operator actually does)
+        run: |
+          set -eu
+          dest='${{ steps.ref.outputs.dest }}'
+          repo="${dest#ghcr.io/}"
+          tag='${{ steps.ref.outputs.tag }}'
+          token=$(curl -fsS "https://ghcr.io/token?scope=repository:${repo}:pull&service=ghcr.io" | jq -r .token)
+          code=$(curl -sS -o /dev/null -w '%{http_code}' \
+            -H "Authorization: Bearer ${token}" \
+            -H 'Accept: application/vnd.oci.image.index.v1+json,application/vnd.docker.distribution.manifest.list.v2+json' \
+            "https://ghcr.io/v2/${repo}/manifests/${tag}")
+          if [ "$code" = 200 ]; then
+            echo "Anonymous pull of ${dest}:${tag} works."
+          else
+            echo "Anonymous pull returned HTTP ${code}." >&2
+            echo "The package is almost certainly still private — set" >&2
+            echo "falcon-builder-seaweedfs to PUBLIC in the organisation's" >&2
+            echo "package settings. Operators cannot pull it until then." >&2
+            exit 1
+          fi
