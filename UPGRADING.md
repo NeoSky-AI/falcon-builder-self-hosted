@@ -137,6 +137,40 @@ at all.
 
 ## Release notes
 
+### v0.11.0
+
+- **Security: user code no longer runs alongside the server's secrets.** Code
+  (JavaScript and Python) nodes, and Condition/Switch expressions, now run in a
+  fresh child process per execution with a scrubbed environment and a
+  hard timeout, instead of inside the worker or web process. Before this, a
+  Python Code node inherited the worker's environment — which is your `.env`,
+  `CREDENTIAL_ENCRYPTION_KEY` included — and the JavaScript sandbox (vm2) has
+  public escapes. Upgrade promptly if anyone other than you can build
+  workflows.
+- **Credential secrets are masked for Viewers and Members.** Only the
+  credential's creator and workspace Owners/Admins see or edit the decrypted
+  values; everyone else sees them masked.
+- **Cloudflare Turnstile now works here.** The v0.10.0 note above no longer
+  applies: set `TURNSTILE_SITE_KEY` and `TURNSTILE_SECRET_KEY` in `.env`
+  (both are in `.env.example`) and the signup form shows the challenge. Leave
+  them unset and nothing changes.
+- Execution logs are much smaller when one large value (a base64 file, a big
+  webhook body) is held by several variables: it is stored once and
+  referenced. Existing executions are untouched.
+- New: AI Decision node (TypeSafe AI), Rich Chat UI for the AI Prompt node and
+  chat/form interfaces (tables, charts and cards in the reply), HighLevel Add/
+  Remove Tags, OneDrive Delete File, folder/file pickers in the Google Drive
+  node, and editing/rotating the secret of any credential type.
+- Models: Claude Opus 5.5, Sonnet 5.5 and Haiku 5.5 (now the default Anthropic
+  model), GPT-6 Sol and Luna.
+- Fixes: Test Node in debug mode no longer feeds the wrong `$json` past
+  Condition nodes; Test Connection refreshes expired Microsoft tokens and
+  checks Google scopes; pages for agents, credentials and skills opened from
+  another workspace are blocked.
+
+The schema gains one enum value, applied by `migrate` on start. No other
+configuration change; upgrade with the steps at the top of this file.
+
 ### v0.10.0
 
 - **"Continue with Google" and "Continue with Microsoft" now appear only when
